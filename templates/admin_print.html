@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير الإجازة المرضية - {{ service_number }}</title>
+    <!-- html2pdf Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background: #f5f5f5; font-family: Arial, sans-serif; }
+        .toolbar { background: #2b5ea7; padding: 12px 20px; color: white; text-align: center; position: sticky; top: 0; z-index: 100; }
+        .toolbar button { background: #16a34a; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-size: 14px; cursor: pointer; margin: 0 5px; font-family: inherit; font-weight: bold; }
+        .toolbar button:hover { background: #15803d; }
+        .toolbar button.secondary { background: #64748b; }
+        .toolbar button.secondary:hover { background: #475569; }
+        .toolbar p { margin: 0; font-size: 13px; }
+        .pdf-wrapper { display: flex; justify-content: center; padding: 30px 0; }
+
+        /* === قالب الـ PDF (LTR لكي يظهر الترتيب صحيحاً) === */
+        #pdf-content {
+            width: 800px;
+            padding: 40px;
+            background: white;
+            font-family: Arial, sans-serif;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            direction: ltr; /* LTR لإظهار الترتيب من اليسار لليمين كما في docx */
+        }
+
+        /* Header — صورة واحدة تحتوي على كل العناصر */
+        .pdf-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .pdf-header img {
+            width: 100%;
+            max-width: 720px;
+            height: auto;
+        }
+
+        /* Table */
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            font-size: 13px;
+            text-align: center;
+        }
+        .pdf-table td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+        }
+        .pdf-label-en { font-weight: bold; width: 23%; color: #115589; }
+        .pdf-label-ar { font-weight: bold; width: 23%; color: #115589; }
+        .pdf-value { color: #333; }
+        .pdf-row-duration { background-color: #1a2a5e; color: white; }
+        .pdf-row-duration .pdf-label-en,
+        .pdf-row-duration .pdf-label-ar { color: white; border-color: #1a2a5e; }
+        .pdf-row-duration .pdf-value { border-color: #1a2a5e; color: white; }
+        /* RTL داخل الخلايا العربية فقط */
+        .pdf-value.is-arabic { direction: rtl; }
+        .pdf-label-ar { direction: rtl; }
+
+        /* Footer */
+        .pdf-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .pdf-footer-left { width: 45%; text-align: center; }
+        .pdf-footer-right { width: 45%; text-align: center; padding-top: 15px; }
+        .pdf-qrcode {
+            width: 100px; height: 100px;
+            margin: 0 auto 10px auto;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .pdf-qrcode img { width: 100px !important; height: 100px !important; }
+        .pdf-verify-ar { font-size: 11px; font-weight: bold; margin: 2px 0; direction: rtl; }
+        .pdf-verify-en { font-size: 10px; margin: 5px 0; color: #333; }
+        .pdf-url { font-size: 10px; color: blue; text-decoration: underline; }
+        .pdf-timestamp { text-align: left; margin-top: 35px; font-weight: bold; font-size: 11px; color: #000; }
+        .pdf-timestamp p { margin: 0 0 12px 0; }
+        .pdf-hospital-logo { max-height: 85px; }
+        .pdf-hospital-ar { font-size: 13px; font-weight: bold; margin: 0 0 3px 0; direction: rtl; }
+        .pdf-hospital-en { font-size: 11px; font-weight: bold; margin: 0 0 5px 0; }
+        .pdf-nhic-row { margin-top: 40px; display: flex; justify-content: flex-end; padding-right: 15px; }
+        .pdf-nhic-logo { height: 45px; }
+    </style>
+</head>
+<body>
+
+<div class="toolbar">
+    <p><strong>📋 معاينة تقرير الإجازة المرضية</strong></p>
+    <div style="margin-top: 8px;">
+        <button onclick="downloadPDF()">📥 تنزيل PDF</button>
+        <button onclick="window.close()" class="secondary">✕ إغلاق</button>
+    </div>
+</div>
+
+<div class="pdf-wrapper">
+    <!-- === قالب الـ PDF (مطابق لـ docx الأصلي) === -->
+    <div id="pdf-content">
+
+        <!-- Header: صورة واحدة تحتوي على كل العناصر (شعار صحة + المملكة + نمط هندسي + عنوان) -->
+        <div class="pdf-header">
+            <img src="{{ url_for('static', filename='images/header_logo.jpeg') }}" alt="Header">
+        </div>
+
+        <!-- Table -->
+        <table class="pdf-table">
+            <tbody>
+                <tr>
+                    <td class="pdf-label-en">Leave ID</td>
+                    <td colspan="2" class="pdf-value">{{ service_number }}</td>
+                    <td class="pdf-label-ar">رمز الإجازة</td>
+                </tr>
+                <tr class="pdf-row-duration">
+                    <td class="pdf-label-en">Leave Duration</td>
+                    <td class="pdf-value">{{ duration_en }}</td>
+                    <td class="pdf-value is-arabic">{{ duration_ar }}</td>
+                    <td class="pdf-label-ar">مدة الإجازة</td>
+                </tr>
+                <tr>
+                    <td class="pdf-label-en">Admission Date</td>
+                    <td class="pdf-value">{{ start_date_gregorian }}</td>
+                    <td class="pdf-value">{{ start_date_hijri }}</td>
+                    <td class="pdf-label-ar">تاريخ الدخول</td>
+                </tr>
+                <tr>
+                    <td class="pdf-label-en">Discharge Date</td>
+                    <td class="pdf-value">{{ end_date_gregorian }}</td>
+                    <td class="pdf-value">{{ end_date_hijri }}</td>
+                    <td class="pdf-label-ar">تاريخ الخروج</td>
+                </tr>
+                <tr>
+                    <td class="pdf-label-en">Issue Date</td>
+                    <td colspan="2" class="pdf-value">{{ issue_date_gregorian }}</td>
+                    <td class="pdf-label-ar">تاريخ إصدار التقرير</td>
+                </tr>
+                <tr>
+                    <td class="pdf-label-en">Name</td>
+                    <td class="pdf-value">{{ name_en }}</td>
+                    <td class="pdf-value is-arabic">{{ name }}</td>
+                    <td class="pdf-label-ar">الاسم</td>
+                </tr>
+                <tr>
+                    <td class="pdf-label-en">National ID / Iqama</td>
+                    <td colspan="2" class="pdf-value">{{ id_number }}</td>
+                    <td class="pdf-label-ar">رقم الهوية / الإقامة</td>
+                </tr>
+                <tr>
+                    <td class="pdf-label-en">Nationality</td>
+                    <td class="pdf-value">Saudi Arabia</td>
+                    <td class="pdf-value is-arabic">السعودية</td>
+                    <td class="pdf-label-ar">الجنسية</td>
+                </tr>
+                <tr>
+                    <td class="pdf-label-en">Employer</td>
+                    <td class="pdf-value"></td>
+                    <td class="pdf-value is-arabic">{{ employer_ar }}</td>
+                    <td class="pdf-label-ar">جهة العمل</td>
+                </tr>
+                <tr>
+                    <td class="pdf-label-en">Practitioner Name</td>
+                    <td class="pdf-value">{{ physician_name_en }}</td>
+                    <td class="pdf-value is-arabic">{{ physician_name_ar }}</td>
+                    <td class="pdf-label-ar">اسم الممارس</td>
+                </tr>
+                <tr>
+                    <td class="pdf-label-en">Position</td>
+                    <td class="pdf-value">{{ position_en }}</td>
+                    <td class="pdf-value is-arabic">{{ position_ar }}</td>
+                    <td class="pdf-label-ar">المسمى الوظيفي</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Footer -->
+        <div class="pdf-footer">
+            <div class="pdf-footer-left">
+                <div class="pdf-qrcode">
+                    <img src="{{ url_for('static', filename='images/qr_code.png') }}" alt="QR Code">
+                </div>
+                <p class="pdf-verify-ar">للتحقق من بيانات التقرير يرجى التأكد من زيارة موقع منصة صحة</p>
+                <p class="pdf-verify-ar">الرسمي</p>
+                <p class="pdf-verify-en">To check the report please visit Seha's official website</p>
+                <a href="#" class="pdf-url">www.seha.sa/#/inquiries/slenquiry</a>
+
+                <div class="pdf-timestamp">
+                    <p>{{ time }}</p>
+                    <p>{{ issue_date_en }}</p>
+                </div>
+            </div>
+
+            <div class="pdf-footer-right">
+                <div style="margin-bottom: 15px;">
+                    <img src="{{ url_for('static', filename='images/moh_logo.jpeg') }}" alt="MOH Logo" class="pdf-hospital-logo">
+                </div>
+                <h3 class="pdf-hospital-ar">مستشفى الجدعاني</h3>
+                <h4 class="pdf-hospital-en">Al-Jadaani Hospital</h4>
+
+                <div class="pdf-nhic-row">
+                    <img src="{{ url_for('static', filename='images/nhic_logo.jpeg') }}" alt="NHIC Logo" class="pdf-nhic-logo">
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function downloadPDF() {
+    const element = document.getElementById('pdf-content');
+    const filename = 'sick_leave_{{ service_number }}.pdf';
+
+    const opt = {
+        margin: 0,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ جاري التوليد...';
+    btn.disabled = true;
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        btn.innerHTML = '✅ تم التنزيل!';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 2000);
+    }).catch((err) => {
+        console.error('PDF generation error:', err);
+        btn.innerHTML = '❌ فشل التنزيل';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 2000);
+    });
+}
+</script>
+
+</body>
+</html>
