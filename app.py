@@ -796,7 +796,7 @@ def admin_print(id):
         record.get("w_day", 0), start_hijri, end_hijri
     )
 
-    # تجميع بيانات الـ PDF
+    # تجميع بيانات الـ PDF (تُمرّر إلى قالب HTML)
     pdf_data = {
         "service_number": record.get("service_number", ""),
         "name": record.get("name", ""),
@@ -816,37 +816,11 @@ def admin_print(id):
         "duration_ar": duration_ar,
         "time": "10:20 AM",
         "issue_date_en": issue_date_en,
+        "site_url": "https://sa-sehaty-sa.onrender.com/",
     }
 
-    if not REPORTLAB_AVAILABLE or not register_fonts():
-        flash("مكتبة توليد PDF غير مثبتة على الخادم.", "error")
-        return redirect(url_for("admin_dashboard"))
-
-    # بناء PDF باستخدام reportlab
-    pdf_buffer = BytesIO()
-    doc = SimpleDocTemplate(
-        pdf_buffer,
-        pagesize=A4,
-        leftMargin=0.30 * inch,
-        rightMargin=0.30 * inch,
-        topMargin=0.47 * inch,
-        bottomMargin=0.19 * inch,
-    )
-    elements = build_pdf_elements(pdf_data)
-    doc.build(elements)
-    pdf_buffer.seek(0)
-
-    # إرجاع PDF كاستجابة
-    filename = f"sick_leave_{record.get('service_number', id)}.pdf"
-    return Response(
-        pdf_buffer,
-        mimetype="application/pdf",
-        headers={
-            "Content-Disposition": f'inline; filename="{filename}"',
-            "Content-Type": "application/pdf",
-            "Content-Length": str(len(pdf_buffer.getvalue())),
-        }
-    )
+    # عرض صفحة الطباعة (الـ PDF يُولّد في المتصفح عبر html2pdf.js)
+    return render_template("admin_print.html", **pdf_data)
 
 
 def build_pdf_elements(data):
