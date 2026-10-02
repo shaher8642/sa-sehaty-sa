@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 0.47in 0.30in 0.19in 0.30in;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Cairo', 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #212121;
+    direction: rtl;
+  }
+  .header {
+    text-align: center;
+    padding: 10px 0 15px 0;
+    border-bottom: 1px solid #1F2D6C;
+    margin-bottom: 15px;
+  }
+  .verify-text {
+    font-family: 'Cairo', sans-serif;
+    font-size: 8pt;
+    color: #2F6CB5;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .verify-text-en {
+    font-family: 'Cambria', 'Times New Roman', serif;
+    font-size: 7.5pt;
+    color: #212121;
+    font-weight: bold;
+    margin-bottom: 2px;
+    direction: ltr;
+  }
+  .verify-url {
+    font-family: 'Cambria', serif;
+    font-size: 8pt;
+    color: #2F6CB5;
+    margin-bottom: 10px;
+    direction: ltr;
+  }
+  .report-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    direction: ltr;
+  }
+  .report-time, .report-date {
+    font-family: 'Cambria', serif;
+    font-size: 8pt;
+    color: #212121;
+    font-weight: bold;
+  }
+  .hospital-name {
+    text-align: center;
+    margin: 15px 0 20px 0;
+  }
+  .hospital-name-ar {
+    font-family: 'Cairo', 'Arial', sans-serif;
+    font-size: 16pt;
+    color: #212121;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  .hospital-name-en {
+    font-family: 'Cambria', serif;
+    font-size: 14pt;
+    color: #212121;
+    font-weight: bold;
+    direction: ltr;
+  }
+  table.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #1F2D6C;
+    direction: ltr;
+  }
+  table.report-table td {
+    padding: 6px 8px;
+    border: 1px solid #D5D5D5;
+    vertical-align: middle;
+  }
+  .label-en {
+    font-family: 'Cambria', serif;
+    font-size: 10.5pt;
+    color: #2F6CB5;
+    font-weight: bold;
+    width: 18%;
+  }
+  .value-en {
+    font-family: 'Cambria', serif;
+    font-size: 9.5pt;
+    color: #2C3D77;
+    width: 32%;
+    direction: ltr;
+    text-align: left;
+  }
+  .value-ar {
+    font-family: 'Cairo', 'Arial', sans-serif;
+    font-size: 10pt;
+    color: #212121;
+    width: 32%;
+    direction: rtl;
+    text-align: right;
+  }
+  .label-ar {
+    font-family: 'Cairo', 'Arial', sans-serif;
+    font-size: 14pt;
+    color: #2F6CB5;
+    font-weight: bold;
+    width: 18%;
+    direction: rtl;
+    text-align: right;
+  }
+  /* Leave Duration: white text on dark blue */
+  .duration-row .label-en,
+  .duration-row .value-en,
+  .duration-row .value-ar,
+  .duration-row .label-ar {
+    color: #FFFFFF !important;
+  }
+  .duration-row td {
+    background-color: #1F2D6C !important;
+  }
+  /* Alternating row backgrounds */
+  .alt-row td {
+    background-color: #F8F8F8;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="verify-text">للتحقق من بيانات التقرير يرجى التأكد من زيارة موقع منصة صحة الرسمي</div>
+  <div class="verify-text-en">To check the report please visit Seha's official website</div>
+  <div class="verify-url">www.seha.sa/#/inquiries/slenquiry</div>
+  <div class="report-meta">
+    <span class="report-time">{{ time }}</span>
+    <span class="report-date">{{ issue_date_en }}</span>
+  </div>
+</div>
+
+<div class="hospital-name">
+  <div class="hospital-name-ar">مستشفى الجدعاني</div>
+  <div class="hospital-name-en">Al-Jadaani Hospital</div>
+</div>
+
+<table class="report-table">
+  <!-- Row 0: Leave ID -->
+  <tr>
+    <td class="label-en">Leave ID</td>
+    <td class="value-en" colspan="2">{{ service_number }}</td>
+    <td class="label-ar">رمز الإجازة</td>
+  </tr>
+  <!-- Row 1: Leave Duration (highlighted) -->
+  <tr class="duration-row">
+    <td class="label-en">Leave Duration</td>
+    <td class="value-en">{{ duration_en }}</td>
+    <td class="value-ar">{{ duration_ar }}</td>
+    <td class="label-ar">مدة الإجازة</td>
+  </tr>
+  <!-- Row 2: Admission Date -->
+  <tr>
+    <td class="label-en">Admission Date</td>
+    <td class="value-en">{{ start_date_gregorian }}</td>
+    <td class="value-ar">{{ start_date_hijri }}</td>
+    <td class="label-ar">تاريخ الدخول</td>
+  </tr>
+  <!-- Row 3: Discharge Date -->
+  <tr class="alt-row">
+    <td class="label-en">Discharge Date</td>
+    <td class="value-en">{{ end_date_gregorian }}</td>
+    <td class="value-ar">{{ end_date_hijri }}</td>
+    <td class="label-ar">تاريخ الخروج</td>
+  </tr>
+  <!-- Row 4: Issue Date -->
+  <tr>
+    <td class="label-en">Issue Date</td>
+    <td class="value-en">{{ issue_date_gregorian }}</td>
+    <td class="value-ar">{{ issue_date_gregorian }}</td>
+    <td class="label-ar">تاريخ إصدار التقرير</td>
+  </tr>
+  <!-- Row 5: Name -->
+  <tr class="alt-row">
+    <td class="label-en">Name</td>
+    <td class="value-en">{{ name_en }}</td>
+    <td class="value-ar">{{ name }}</td>
+    <td class="label-ar">الاسم</td>
+  </tr>
+  <!-- Row 6: National ID / Iqama -->
+  <tr>
+    <td class="label-en">National ID / Iqama</td>
+    <td class="value-en" colspan="2">{{ id_number }}</td>
+    <td class="label-ar">رقم الهوية / الإقامة</td>
+  </tr>
+  <!-- Row 7: Nationality -->
+  <tr class="alt-row">
+    <td class="label-en">Nationality</td>
+    <td class="value-en">Saudi Arabia</td>
+    <td class="value-ar">السعودية</td>
+    <td class="label-ar">الجنسية</td>
+  </tr>
+  <!-- Row 8: Employer -->
+  <tr>
+    <td class="label-en">Employer</td>
+    <td class="value-en"></td>
+    <td class="value-ar">{{ employer_ar }}</td>
+    <td class="label-ar">جهة العمل</td>
+  </tr>
+  <!-- Row 9: Physician Name -->
+  <tr class="alt-row">
+    <td class="label-en">Physician Name</td>
+    <td class="value-en">{{ physician_name_en }}</td>
+    <td class="value-ar">{{ physician_name_ar }}</td>
+    <td class="label-ar">اسم الممارس</td>
+  </tr>
+  <!-- Row 10: Position -->
+  <tr>
+    <td class="label-en">Position</td>
+    <td class="value-en">{{ position_en }}</td>
+    <td class="value-ar">{{ position_ar }}</td>
+    <td class="label-ar">المسمى الوظيفي</td>
+  </tr>
+</table>
+
+</body>
+</html>

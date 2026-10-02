@@ -1,0 +1,80 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 لوحة التحكم — نظرة عامة</h1>
+    <div class="actions">
+        <a href="{{ url_for('admin_create') }}" class="btn btn-success">+ إضافة إجازة جديدة</a>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label">إجمالي السجلات</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.unique_patients }}</div>
+        <div class="stat-label">عدد المرضى</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.unique_doctors }}</div>
+        <div class="stat-label">عدد الأطباء</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_days }}</div>
+        <div class="stat-label">إجمالي أيام الإجازات</div>
+    </div>
+</div>
+
+<div class="page-header">
+    <h1>📋 سجلات الإجازات المرضية</h1>
+</div>
+
+<div class="table-card">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>رمز الخدمة</th>
+                <th>رقم الهوية</th>
+                <th>الاسم</th>
+                <th>تاريخ الإصدار</th>
+                <th>من → إلى</th>
+                <th>الأيام</th>
+                <th>الطبيب</th>
+                <th>إجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in records %}
+            <tr>
+                <td>{{ r.id }}</td>
+                <td><span class="badge badge-blue">{{ r.service_number }}</span></td>
+                <td>{{ r.id_number }}</td>
+                <td>{{ r.name }}</td>
+                <td>{{ r.issue_date }}</td>
+                <td>{{ r.start_date }} → {{ r.end_date }}</td>
+                <td><span class="badge badge-green">{{ r.w_day }} يوم</span></td>
+                <td>{{ r.doctor }}<br><small style="color:#64748b">{{ r.doctor_title }}</small></td>
+                <td>
+                    <div class="table-actions">
+                        <a href="{{ url_for('admin_print', id=r.id) }}" target="_blank" class="btn btn-info">طباعة</a>
+                        <a href="{{ url_for('admin_edit', id=r.id) }}" class="btn btn-warning">تعديل</a>
+                        <form method="POST" action="{{ url_for('admin_delete', id=r.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا السجل؟');" style="display:inline;">
+                            <button type="submit" class="btn btn-danger">حذف</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" style="text-align:center; padding:30px; color:#64748b;">
+                    لا توجد سجلات بعد. <a href="{{ url_for('admin_create') }}">أضف أول إجازة</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

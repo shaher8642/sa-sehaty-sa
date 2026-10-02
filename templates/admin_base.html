@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم | صحة</title>
+    <link rel="icon" href="{{ url_for('static', filename='inquiry/seha.png') }}" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+            direction: rtl;
+            min-height: 100vh;
+        }
+        /* ===== الترويسة ===== */
+        .topbar {
+            background: #2b5ea7;
+            color: white;
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .topbar .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        .topbar .brand .logo-circle {
+            width: 38px; height: 38px;
+            background: white;
+            color: #2b5ea7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .topbar .actions { display: flex; gap: 10px; }
+        .topbar .actions a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: rgba(255,255,255,0.15);
+            transition: background 0.2s;
+        }
+        .topbar .actions a:hover { background: rgba(255,255,255,0.25); }
+        .topbar .actions a.danger { background: #dc2626; }
+        .topbar .actions a.danger:hover { background: #b91c1c; }
+
+        /* ===== الحاوية ===== */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-header h1 {
+            color: #1e293b;
+            font-size: 1.6rem;
+        }
+        .page-header .actions { display: flex; gap: 10px; }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        .btn-primary { background: #2b5ea7; color: white; }
+        .btn-primary:hover { background: #1e3d6f; }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-success:hover { background: #15803d; }
+        .btn-warning { background: #d97706; color: white; }
+        .btn-warning:hover { background: #b45309; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-info { background: #2F6CB5; color: white; }
+        .btn-info:hover { background: #1F2D6C; }
+        .btn-secondary { background: #64748b; color: white; }
+        .btn-secondary:hover { background: #475569; }
+
+        /* ===== بطاقات الإحصاء ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .stat-card .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2b5ea7;
+            margin-bottom: 4px;
+        }
+        .stat-card .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        /* ===== الجدول ===== */
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead {
+            background: #f1f5f9;
+        }
+        th, td {
+            padding: 14px 16px;
+            text-align: right;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            color: #475569;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        tbody tr:hover { background: #f8fafc; }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-green { background: #dcfce7; color: #166534; }
+
+        .table-actions { display: flex; gap: 6px; }
+        .table-actions .btn { padding: 6px 12px; font-size: 0.8rem; }
+
+        /* ===== الفلاش ===== */
+        .flash {
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .flash-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .flash-error { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+
+        /* ===== النموذج ===== */
+        .form-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .form-card h2 {
+            color: #2b5ea7;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            color: #334155;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Cairo', sans-serif;
+            text-align: right;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2b5ea7;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+            .table-card { overflow-x: auto; }
+            table { font-size: 0.8rem; }
+            th, td { padding: 10px 8px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="brand">
+            <div class="logo-circle">✚</div>
+            <span>صحة — لوحة التحكم</span>
+        </div>
+        <div class="actions">
+            <a href="{{ url_for('index') }}">عرض الموقع</a>
+            <a href="{{ url_for('admin_dashboard') }}">السجلات</a>
+            <a href="{{ url_for('admin_create') }}">+ إضافة إجازة</a>
+            <a href="{{ url_for('admin_logout') }}" class="danger">خروج</a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

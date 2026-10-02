@@ -1,4 +1,7 @@
 # المتطلبات لتشغيل المشروع
 Flask==3.0.3
 gunicorn==22.0.0
+reportlab==4.2.5
+arabic_reshaper==3.0.0
+python-bidi==0.6.11
 hijridate==2.6.0
