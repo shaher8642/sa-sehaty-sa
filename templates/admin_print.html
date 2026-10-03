@@ -92,7 +92,7 @@
 <div class="toolbar">
     <p><strong>📋 معاينة تقرير الإجازة المرضية</strong></p>
     <div style="margin-top: 8px;">
-        <button onclick="downloadPDF()">📥 تنزيل PDF</button>
+        <button onclick="downloadPDF(this)">📥 تنزيل PDF</button>
         <button onclick="window.close()" class="secondary">✕ إغلاق</button>
     </div>
 </div>
@@ -209,7 +209,23 @@
 </div>
 
 <script>
-function downloadPDF() {
+// انتظار تحميل كل الصور قبل السماح بتوليد PDF
+function waitForImages(element) {
+    const images = element.querySelectorAll('img');
+    const promises = [];
+    images.forEach(img => {
+        if (!img.complete && img.src) {
+            promises.push(new Promise(resolve => {
+                img.onload = resolve;
+                img.onerror = resolve;
+                setTimeout(resolve, 5000);
+            }));
+        }
+    });
+    return Promise.all(promises);
+}
+
+async function downloadPDF(btn) {
     const element = document.getElementById('pdf-content');
     const filename = 'sick_leave_{{ service_number }}.pdf';
 
@@ -217,30 +233,55 @@ function downloadPDF() {
         margin: 0,
         filename: filename,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, allowTaint: true },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: true,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 1000
+        },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all'] }
     };
 
-    const btn = event.target;
     const originalText = btn.innerHTML;
     btn.innerHTML = '⏳ جاري التوليد...';
     btn.disabled = true;
 
-    html2pdf().set(opt).from(element).save().then(() => {
+    try {
+        console.log('جاري تحميل الصور...');
+        await waitForImages(element);
+        console.log('تم تحميل الصور، بدء توليد PDF');
+
+        await html2pdf().set(opt).from(element).save();
+        console.log('تم توليد PDF بنجاح');
+
         btn.innerHTML = '✅ تم التنزيل!';
         setTimeout(() => {
             btn.innerHTML = originalText;
             btn.disabled = false;
         }, 2000);
-    }).catch((err) => {
+    } catch (err) {
         console.error('PDF generation error:', err);
+        alert('حدث خطأ في توليد PDF: ' + err.message + '\n\nتحقق من console للمزيد من التفاصيل.');
         btn.innerHTML = '❌ فشل التنزيل';
         setTimeout(() => {
             btn.innerHTML = originalText;
             btn.disabled = false;
-        }, 2000);
-    });
+        }, 3000);
+    }
 }
+
+window.addEventListener('load', () => {
+    const element = document.getElementById('pdf-content');
+    const images = element.querySelectorAll('img');
+    console.log(`عدد الصور في القالب: ${images.length}`);
+    images.forEach((img, i) => {
+        console.log(`  صورة ${i+1}: src=${img.src}, complete=${img.complete}`);
+    });
+});
 </script>
 
 </body>
