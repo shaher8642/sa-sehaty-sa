@@ -19,7 +19,7 @@
         /* === قالب الـ PDF (LTR لكي يظهر الترتيب صحيحاً) === */
         #pdf-content {
             width: 800px;
-            padding: 40px;
+            padding: 20px 30px;  /* تقليل الـ padding من 40px إلى 20px */
             background: white;
             font-family: Arial, sans-serif;
             position: relative;
@@ -30,7 +30,7 @@
         /* Header — صورة واحدة تحتوي على كل العناصر */
         .pdf-header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;  /* تقليل من 20px إلى 10px */
         }
         .pdf-header img {
             width: 100%;
@@ -42,13 +42,13 @@
         .pdf-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
-            font-size: 13px;
+            margin-bottom: 12px;  /* تقليل من 30px إلى 12px */
+            font-size: 11px;  /* تقليل من 13px إلى 11px */
             text-align: center;
         }
         .pdf-table td {
             border: 1px solid #dee2e6;
-            padding: 12px;
+            padding: 5px 8px;  /* تقليل من 12px إلى 5px عمودي + 8px أفقي */
         }
         .pdf-label-en { font-weight: bold; width: 23%; color: #115589; }
         .pdf-label-ar { font-weight: bold; width: 23%; color: #115589; }
@@ -70,21 +70,21 @@
         .pdf-footer-left { width: 45%; text-align: center; }
         .pdf-footer-right { width: 45%; text-align: center; padding-top: 15px; }
         .pdf-qrcode {
-            width: 100px; height: 100px;
-            margin: 0 auto 10px auto;
+            width: 75px; height: 75px;  /* تصغير من 100px إلى 75px */
+            margin: 0 auto 6px auto;
             display: flex; align-items: center; justify-content: center;
         }
-        .pdf-qrcode img { width: 100px !important; height: 100px !important; }
-        .pdf-verify-ar { font-size: 11px; font-weight: bold; margin: 2px 0; direction: rtl; }
-        .pdf-verify-en { font-size: 10px; margin: 5px 0; color: #333; }
-        .pdf-url { font-size: 10px; color: blue; text-decoration: underline; }
-        .pdf-timestamp { text-align: left; margin-top: 35px; font-weight: bold; font-size: 11px; color: #000; }
-        .pdf-timestamp p { margin: 0 0 12px 0; }
-        .pdf-hospital-logo { max-height: 85px; }
-        .pdf-hospital-ar { font-size: 13px; font-weight: bold; margin: 0 0 3px 0; direction: rtl; }
-        .pdf-hospital-en { font-size: 11px; font-weight: bold; margin: 0 0 5px 0; }
-        .pdf-nhic-row { margin-top: 40px; display: flex; justify-content: flex-end; padding-right: 15px; }
-        .pdf-nhic-logo { height: 45px; }
+        .pdf-qrcode img { width: 75px !important; height: 75px !important; }
+        .pdf-verify-ar { font-size: 9px; font-weight: bold; margin: 1px 0; direction: rtl; }
+        .pdf-verify-en { font-size: 9px; margin: 3px 0; color: #333; }
+        .pdf-url { font-size: 9px; color: blue; text-decoration: underline; }
+        .pdf-timestamp { text-align: left; margin-top: 12px; font-weight: bold; font-size: 10px; color: #000; }
+        .pdf-timestamp p { margin: 0 0 4px 0; }
+        .pdf-hospital-logo { max-height: 60px; }  /* تصغير من 85px إلى 60px */
+        .pdf-hospital-ar { font-size: 11px; font-weight: bold; margin: 0 0 2px 0; direction: rtl; }
+        .pdf-hospital-en { font-size: 10px; font-weight: bold; margin: 0 0 3px 0; }
+        .pdf-nhic-row { margin-top: 15px; display: flex; justify-content: flex-end; padding-right: 15px; }
+        .pdf-nhic-logo { height: 35px; }  /* تصغير من 45px إلى 35px */
     </style>
 </head>
 <body>
@@ -242,8 +242,8 @@ async function downloadPDF(btn) {
             scrollY: 0,
             windowWidth: 1000
         },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all'] }
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait', compress: true },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['#pdf-content'] }  /* منع انكسار الصفحة */
     };
 
     const originalText = btn.innerHTML;
