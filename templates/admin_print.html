@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تقرير الإجازة المرضية - {{ service_number }}</title>
-    <!-- html2pdf Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- html2pdf Library (محلية - لا تحتاج انترنت) -->
+    <script src="{{ url_for('static', filename='js/html2pdf.bundle.min.js') }}"></script>
     <style>
         body { margin: 0; padding: 0; background: #f5f5f5; font-family: Arial, sans-serif; }
         .toolbar { background: #2b5ea7; padding: 12px 20px; color: white; text-align: center; position: sticky; top: 0; z-index: 100; }
