@@ -229,3 +229,5 @@ curl -X POST https://sa-sehaty-sa.onrender.com/api/public-lookup \
 ## 📜 الترخيص
 
 مشروع تعليمي لأغراض التدريب والدراسة.
+
+<!-- تحديث: Wed Oct 14 21:03:42 UTC 2026 -->
