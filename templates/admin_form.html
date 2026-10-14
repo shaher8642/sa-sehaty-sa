@@ -1,0 +1,167 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{% if is_edit %}✏️ تعديل إجازة{% else %}➕ إنشاء إجازة مرضية جديدة{% endif %}</h1>
+    <div class="actions">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">↩ رجوع للقائمة</a>
+    </div>
+</div>
+
+<div class="form-card">
+    <h2>{% if is_edit %}تعديل بيانات الإجازة #{{ record.id if record else '' }}{% else %}أدخل بيانات الإجازة الجديدة{% endif %}</h2>
+
+    <form method="POST" action="{% if is_edit %}{{ url_for('admin_edit', id=record.id) }}{% else %}{{ url_for('admin_create') }}{% endif %}">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="service_number">رمز الخدمة *</label>
+                <input type="text" id="service_number" name="service_number" required
+                       value="{{ record.service_number if record else '' }}"
+                       maxlength="14" placeholder="مثال: SL1234567890">
+            </div>
+            <div class="form-group">
+                <label for="id_number">رقم الهوية / الإقامة *</label>
+                <input type="text" id="id_number" name="id_number" required
+                       value="{{ record.id_number if record else '' }}"
+                       maxlength="10" inputmode="numeric" placeholder="مثال: 1023456789">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="name">👤 اسم المريض (عربي) *</label>
+                <input type="text" id="name" name="name" required
+                       value="{{ record.name if record else '' }}"
+                       placeholder="الاسم بالعربي">
+            </div>
+            <div class="form-group">
+                <label for="name_en">👤 اسم المريض (إنجليزي) *</label>
+                <input type="text" id="name_en" name="name_en" required
+                       value="{{ record.name_en if record else '' }}"
+                       placeholder="NAME IN ENGLISH" style="direction:ltr">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_number">🆔 رقم الهوية *</label>
+                <input type="text" id="id_number" name="id_number" required
+                       value="{{ record.id_number if record else '' }}"
+                       maxlength="10" inputmode="numeric" placeholder="مثال: 1023456789">
+            </div>
+            <div class="form-group">
+                <label for="employer_ar">🏢 جهة العمل (عربي)</label>
+                <input type="text" id="employer_ar" name="employer_ar"
+                       value="{{ record.employer_ar if record else '' }}"
+                       placeholder="جهة عمل المريض">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="physician_name_ar">👨‍⚕️ اسم الممارس (عربي) *</label>
+                <input type="text" id="physician_name_ar" name="physician_name_ar" required
+                       value="{{ record.physician_name_ar if record else (record.doctor if record else '') }}"
+                       placeholder="مثال: د. أحمد الشهري">
+            </div>
+            <div class="form-group">
+                <label for="physician_name_en">👨‍⚕️ اسم الممارس (إنجليزي) *</label>
+                <input type="text" id="physician_name_en" name="physician_name_en" required
+                       value="{{ record.physician_name_en if record else '' }}"
+                       placeholder="DR. AHMED ALSHAHRI" style="direction:ltr">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="position_ar">💼 المسمى الوظيفي (عربي) *</label>
+                <input type="text" id="position_ar" name="position_ar" required
+                       value="{{ record.position_ar if record else (record.doctor_title if record else '') }}"
+                       placeholder="مثال: استشاري طب الأسرة">
+            </div>
+            <div class="form-group">
+                <label for="position_en">💼 المسمى الوظيفي (إنجليزي) *</label>
+                <input type="text" id="position_en" name="position_en" required
+                       value="{{ record.position_en if record else '' }}"
+                       placeholder="Family Medicine Consultant" style="direction:ltr">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="issue_date">📅 تاريخ إصدار التقرير *</label>
+                <input type="date" id="issue_date" name="issue_date" required
+                       value="{{ record.issue_date if record else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="w_day">⏰ عدد الأيام *</label>
+                <input type="number" id="w_day" name="w_day" required min="1" max="365"
+                       value="{{ record.w_day if record else 3 }}">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="start_date">📅 تاريخ الدخول (ميلادي) *</label>
+                <input type="date" id="start_date" name="start_date" required
+                       value="{{ record.start_date if record else '' }}">
+                <small style="color:#64748b; display:block; margin-top:4px;">سيتم احتساب التاريخ الهجري تلقائيًا</small>
+            </div>
+            <div class="form-group">
+                <label for="end_date">📅 تاريخ الخروج (ميلادي) *</label>
+                <input type="date" id="end_date" name="end_date" required
+                       value="{{ record.end_date if record else '' }}">
+                <small style="color:#64748b; display:block; margin-top:4px;">سيتم احتساب التاريخ الهجري تلقائيًا</small>
+            </div>
+        </div>
+
+        <!-- Hidden fields for backward compatibility with API -->
+        <input type="hidden" id="doctor" name="doctor" value="{{ record.doctor if record else '' }}">
+        <input type="hidden" id="doctor_title" name="doctor_title" value="{{ record.doctor_title if record else '' }}">
+
+        <div class="form-actions">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">إلغاء</a>
+            <button type="submit" class="btn btn-success">
+                {% if is_edit %}💾 حفظ التعديلات{% else %}✓ إنشاء الإجازة{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+// تحديث تاريخ النهاية تلقائياً عند تغيير تاريخ البداية أو عدد الأيام
+const start = document.getElementById('start_date');
+const days = document.getElementById('w_day');
+const end = document.getElementById('end_date');
+
+function updateEnd() {
+    if (start.value && days.value) {
+        const d = new Date(start.value);
+        d.setDate(d.getDate() + (parseInt(days.value) - 1));
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        end.value = `${y}-${m}-${day}`;
+    }
+}
+start.addEventListener('change', updateEnd);
+days.addEventListener('input', updateEnd);
+
+// مزامنة الحقول الجديدة مع الحقول القديمة (للـ API القديم)
+const physicianAr = document.getElementById('physician_name_ar');
+const physicianEn = document.getElementById('physician_name_en');
+const positionAr = document.getElementById('position_ar');
+const positionEn = document.getElementById('position_en');
+const doctorHidden = document.getElementById('doctor');
+const doctorTitleHidden = document.getElementById('doctor_title');
+
+function syncHiddenFields() {
+    if (doctorHidden) doctorHidden.value = physicianAr.value;
+    if (doctorTitleHidden) doctorTitleHidden.value = positionAr.value;
+}
+[physicianAr, physicianEn, positionAr, positionEn].forEach(el => {
+    if (el) el.addEventListener('input', syncHiddenFields);
+});
+syncHiddenFields();
+</script>
+{% endblock %}

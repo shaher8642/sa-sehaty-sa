@@ -1,0 +1,38 @@
+# ملفات قاعدة البيانات
+*.db
+*.sqlite
+*.sqlite3
+sehaty.db
+
+# ملفات Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+
+# بيئات افتراضية
+venv/
+env/
+ENV/
+.venv/
+
+# ملفات النظام
+.DS_Store
+Thumbs.db
+
+# محررات الأكواد
+.vscode/
+.idea/
+*.swp
+
+# ملفات السجلات
+*.log
+
+# ملفات البيئة
+.env
+.env.local

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صحة | الاستعلام عن الإجازات المرضية</title>
+    <link rel="icon" href="{{ url_for('static', filename='inquiry/seha.png') }}" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='inquiry/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .result { display: none; margin-top: 15px; }
+        .result-box { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; padding: 20px; }
+        .result-box p { margin: 8px 0; font-size: 0.95rem; }
+        .result-box span { font-weight: bold; color: #0f172a; }
+        .notFound { margin: 10px 0; }
+        .notFound p { background: #fef2f2 !important; color: #dc2626 !important; border: 1px solid #ef4444 !important; border-radius: 8px !important; padding: 14px 18px !important; text-align: center !important; font-weight: 600 !important; display: block !important; }
+
+        /* ===== شريط التنقل ===== */
+        .breadcrumb-row { padding: 16px 24px 16px 24px; }
+        .breadcrumb { display: flex; gap: 8px; list-style: none; margin: 0; padding: 0; font-size: 15px; }
+        .breadcrumb li { display: flex; align-items: center; gap: 8px; }
+        .breadcrumb li a { color: #2D6CB4; font-weight: 700; font-size: 14px; text-decoration: none; }
+        .breadcrumb li a:hover { text-decoration: underline; }
+        .breadcrumb li.active { color: #64748b; font-weight: 600; font-size: 14px; }
+        .breadcrumb li + li::before { content: "›"; color: #94a3b8; font-size: 20px; font-weight: 400; }
+
+        /* ===== سبنر 8 نقاط ===== */
+        .spinner-wrap { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; margin-right: 8px; width: 18px; height: 18px; position: relative; }
+        .spinner-wrap .dot { width: 4px; height: 4px; background: #fff; border-radius: 50%; position: absolute; top: 50%; left: 50%; margin-top: -2px; margin-left: -2px; animation: dotSpin 1.2s linear infinite; }
+        .spinner-wrap .dot:nth-child(1) { transform: rotate(0deg) translate(7px); animation-delay: 0s; }
+        .spinner-wrap .dot:nth-child(2) { transform: rotate(45deg) translate(7px); animation-delay: 0.15s; }
+        .spinner-wrap .dot:nth-child(3) { transform: rotate(90deg) translate(7px); animation-delay: 0.3s; }
+        .spinner-wrap .dot:nth-child(4) { transform: rotate(135deg) translate(7px); animation-delay: 0.45s; }
+        .spinner-wrap .dot:nth-child(5) { transform: rotate(180deg) translate(7px); animation-delay: 0.6s; }
+        .spinner-wrap .dot:nth-child(6) { transform: rotate(225deg) translate(7px); animation-delay: 0.75s; }
+        .spinner-wrap .dot:nth-child(7) { transform: rotate(270deg) translate(7px); animation-delay: 0.9s; }
+        .spinner-wrap .dot:nth-child(8) { transform: rotate(315deg) translate(7px); animation-delay: 1.05s; }
+        @keyframes dotSpin { 0% { opacity: 1; transform: rotate(0deg) translate(7px) scale(1); } 100% { opacity: 0.2; transform: rotate(360deg) translate(7px) scale(0.6); } }
+
+        /* ===== أيقونة القائمة مصغرة ===== */
+        .menu-btn {
+            display: none;
+            width: 36px; height: 36px;
+            background: transparent; border: none; cursor: pointer; padding: 6px;
+            flex-direction: column; justify-content: center; align-items: center; gap: 5px;
+            transition: 0.3s;
+        }
+        .bar { display: block; width: 24px; height: 3px; background-color: #2b5ea7; border-radius: 8px; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); transform-origin: center; }
+        .menu-btn.active .bar:nth-child(1) { transform: translateY(8px) rotate(45deg); width: 24px; }
+        .menu-btn.active .bar:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        .menu-btn.active .bar:nth-child(3) { transform: translateY(-8px) rotate(-45deg); width: 24px; }
+
+        /* ===== أيقونة المحادثة مصغرة ===== */
+        .chat-pill-container {
+            position: fixed; bottom: 24px; right: 16px;
+            background: #ffffff; padding: 6px 14px 6px 6px; border-radius: 50px;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer; transition: transform 0.2s ease, box-shadow 0.3s ease; z-index: 10000;
+        }
+        .chat-pill-container:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); }
+        .right-circle {
+            width: 42px; height: 42px; background-color: #2b5ea7; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; flex-shrink: 0;
+        }
+        .bubble-icon {
+            background: white; width: 20px; height: 16px; border-radius: 5px;
+            position: relative; display: flex; justify-content: center; align-items: center; gap: 2px;
+        }
+        .bubble-icon::after {
+            content: ''; position: absolute; bottom: -3px; right: 6px;
+            width: 0; height: 0; border-left: 4px solid transparent;
+            border-right: 4px solid transparent; border-top: 5px solid white;
+        }
+        .dot-blue { width: 3px; height: 3px; background: #2b5ea7; border-radius: 50%; }
+        .left-lens {
+            width: 42px; height: 42px; border-radius: 50%; position: relative;
+            background: #ffffff; flex-shrink: 0;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+            animation: metallic-spin 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        .left-lens::before {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            background: conic-gradient(from 180deg, #eaf3ff 0deg, #c1d9f9 30deg, #2b5ea7 60deg, #5c8cd9 90deg, #ffffff 130deg, #a3c4f5 160deg, #2b5ea7 200deg, #4573c4 230deg, #ffffff 270deg, #6d96df 300deg, #2b5ea7 330deg, #c1d9f9 360deg);
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.6);
+            mix-blend-mode: multiply;
+            animation: metallic-spin 8s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
+        }
+        .left-lens::after {
+            content: ''; position: absolute; inset: 2px; border-radius: 50%;
+            background: repeating-conic-gradient(from 0deg, transparent 0deg, transparent 5deg, rgba(255, 255, 255, 0.95) 5deg, rgba(255, 255, 255, 0.95) 6deg);
+            mix-blend-mode: overlay;
+            animation: slow-shine 10s linear infinite;
+        }
+        @keyframes metallic-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes slow-shine { 0% { transform: rotate(0deg); opacity: 0.8; } 50% { opacity: 0.5; } 100% { transform: rotate(360deg); opacity: 0.8; } }
+
+        /* ===== نافذة المحادثة ===== */
+        .chat-window-container {
+            position: fixed; bottom: 90px; right: 16px; width: 340px; height: 460px;
+            background: white; border-radius: 16px; box-shadow: 0 5px 30px rgba(0, 0, 0, 0.25);
+            display: none; flex-direction: column; overflow: hidden; z-index: 9999; direction: rtl;
+        }
+        .chat-header { background: #2b5ea7; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 14px; }
+        .chat-header .close-btn { cursor: pointer; font-size: 18px; background: rgba(255,255,255,0.2); border-radius: 50%; width: 26px; height: 26px; display: flex; justify-content: center; align-items: center; }
+        .chat-body { flex: 1; padding: 16px; overflow-y: auto; background: #f7f9fc; display: flex; flex-direction: column; gap: 8px; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+        .msg.bot { background: #e9edf4; align-self: flex-start; border-bottom-right-radius: 0; }
+        .msg.user { background: #2b5ea7; color: white; align-self: flex-end; border-bottom-left-radius: 0; }
+        .chat-input-area { display: flex; padding: 12px; background: white; border-top: 1px solid #eee; gap: 8px; }
+        .chat-input-area input { flex: 1; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 20px; outline: none; font-size: 13px; }
+        .chat-input-area button { background: #2b5ea7; color: white; border: none; border-radius: 20px; padding: 0 16px; font-weight: bold; cursor: pointer; font-size: 13px; }
+
+        @media (max-width: 992px) { .menu-btn { display: flex; } .main-nav, .auth-buttons { display: none; } .result-box { padding: 15px; } .chat-window-container { width: 90%; right: 5%; } }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <div class="nav-wrapper align-right">
+            <nav class="main-nav">
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link">الرئيسية</a></li>
+                    <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link">الخدمات</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('index') }}">الاستعلامات</a></li>
+                    <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link">الأسئلة الشائعة</a></li>
+                    <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link">تواصل معنا</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <a class="btn btn-outline" href="{{ url_for('index') }}">إنشاء حساب</a>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">تسجيل الدخول</a>
+            </div>
+        </div>
+        <div class="logo">
+            <a class="logo-link" href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='inquiry/seha.png') }}" alt="صحة" class="logo-img"></a>
+            <button class="menu-btn" id="menuToggle" onclick="toggleMobileNav()">
+                <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+            </button>
+        </div>
+        <div class="mobile-nav" id="mobileNav">
+            <a href="{{ url_for('index') }}">الرئيسية</a>
+            <a href="{{ url_for('index') }}">الخدمات</a>
+            <a class="active" href="{{ url_for('index') }}">الاستعلامات</a>
+            <a href="{{ url_for('index') }}">الأسئلة الشائعة</a>
+            <a href="{{ url_for('index') }}">تواصل معنا</a>
+            <a href="{{ url_for('index') }}" class="mobile-signin">تسجيل الدخول</a>
+        </div>
+    </div>
+    <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileNav()"></div>
+</header>
+
+<div class="breadcrumb-row">
+    <ol class="breadcrumb">
+        <li><a href="{{ url_for('index') }}">الرئيسية</a></li>
+        <li><a href="{{ url_for('index') }}">الاستعلامات</a></li>
+        <li class="active">الإجازات المرضية</li>
+    </ol>
+</div>
+
+<main class="main-content" id="topOfPage">
+    <div class="container">
+        <div class="inquiry-section">
+            <h1 class="page-title">الإجازات المرضية</h1>
+            <p class="page-description">خدمة الاستعلام عن الإجازات المرضية تتيح لك الاستعلام عن حالة طلبك للإجازة ويمكنك طباعتها عن طريق تطبيق صحتي</p>
+            <form class="inquiry-form" id="inquiryForm" onsubmit="handleCheckLeave(event)" novalidate="">
+                <div id="notFound" class="notFound"></div>
+                <div class="form-group"><input type="text" id="leaveNumber" class="form-input" placeholder="رمز الخدمة" maxlength="14" autocomplete="off" required=""></div>
+                <div class="form-group"><input type="text" id="idNumber" class="form-input" placeholder="رقم الهوية / الإقامة" inputmode="numeric" maxlength="10" autocomplete="off" required=""></div>
+                <div id="result" class="result"></div>
+                <div class="form-actions"><button type="submit" class="btn btn-submit" id="submitButton">استعلام</button></div>
+            </form>
+            <div class="back-link"><a href="{{ url_for('index') }}" class="btn btn-back">رجوع للاستعلامات</a></div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="footer-logo"><img src="{{ url_for('static', filename='inquiry/seha1.png') }}" alt="صحة" class="footer-logo-img"><div class="divider"></div><div class="logo-text"><span class="ar-text">صحة</span><span class="en-text">Seha</span></div></div>
+                <p class="footer-description">منصة صحة تخدم جميع المنشآت الطبية من خلال تقديم الخدمات الصحية إلكترونياً لجميع المنشآت الطبية وتسعى إلى توحيد وأتمتة الإجراءات والخدمات بما في ذلك رفع جودة الأداء وخفض التكاليف.</p>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-title">القائمة الرئيسية</h3>
+                <ul class="footer-links">
+                    <li><a href="{{ url_for('index') }}" class="footer-link">الخدمات</a></li>
+                    <li><a href="{{ url_for('index') }}" class="footer-link">الاستعلامات</a></li>
+                    <li><a href="{{ url_for('index') }}" class="footer-link">الأسئلة الشائعة</a></li>
+                    <li><a href="{{ url_for('index') }}" class="footer-link">تواصل معنا</a></li>
+                </ul>
+            </div>
+            <div class="footer-section contact-section">
+                <h3 class="footer-title">تواصل معنا</h3>
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <p class="contact-item"><img src="{{ url_for('static', filename='inquiry/phone-icon.png') }}" alt="هاتف" class="contact-icon"><a href="tel:920002005" class="contact-link">920002005</a></p>
+                        <p class="contact-item"><img src="{{ url_for('static', filename='inquiry/email-icon.png') }}" alt="بريد" class="contact-icon"><a href="mailto:support@seha.sa" class="contact-link">support@seha.sa</a></p>
+                        <p class="contact-item"><img src="{{ url_for('static', filename='inquiry/whatsapp-icon.png') }}" alt="واتساب" class="contact-icon"><a href="tel:920002005" class="contact-link">920002005</a></p>
+                        <p class="work-hours">أوقات العمل: الأحد حتى الخميس 8 ص - 11 م</p>
+                    </div>
+                    <div class="contact-logos"><img src="{{ url_for('static', filename='inquiry/lean-logo.png') }}" alt="لين" class="org-logo"><div class="separator"></div><img src="{{ url_for('static', filename='inquiry/moh-logo.png') }}" alt="وزارة الصحة" class="org-logo"></div>
+                </div>
+                <div class="social-media">
+                    <a class="social-link" href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='inquiry/youtube-icon.png') }}" alt="يوتيوب" class="social-icon"></a>
+                    <a class="social-link" href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='inquiry/x.png') }}" alt="منصة اكس" class="social-icon"></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="copyright">منصة صحة معتمدة من قبل وزارة الصحة © 2026</p>
+            <div class="footer-bottom-links">
+                <a class="footer-bottom-link" href="{{ url_for('index') }}">سياسة الخصوصية وشروط الاستخدام</a>
+                <a class="footer-bottom-link" href="{{ url_for('index') }}">دليل الاستخدام</a>
+                <a class="footer-bottom-link" href="{{ url_for('admin_login') }}">بوابة الإدارة</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- أيقونة المحادثة -->
+<div class="chat-pill-container" onclick="toggleChat()">
+    <div class="left-lens"></div>
+    <div class="right-circle">
+        <div class="bubble-icon">
+            <div class="dot-blue"></div><div class="dot-blue"></div><div class="dot-blue"></div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة المحادثة -->
+<div class="chat-window-container" id="chatWindow">
+    <div class="chat-header"><div>المحادثة</div><div class="close-btn" onclick="toggleChat()">✕</div></div>
+    <div class="chat-body" id="chatBody"><div class="msg bot">مرحباً! كيف يمكنني مساعدتك؟</div></div>
+    <div class="chat-input-area">
+        <button onclick="sendMsg()">إرسال</button>
+        <input type="text" id="msgInput" placeholder="اكتب رسالتك..." onkeypress="if(event.key==='Enter')sendMsg()">
+    </div>
+</div>
+
+<script>
+function toEnglishDigits(value){return String(value||'').replace(/[٠-٩]/g,d=>d.charCodeAt(0)-1632).replace(/[۰-۹]/g,d=>d.charCodeAt(0)-1776)}
+function toggleChat(){const w=document.getElementById('chatWindow');w.style.display=(w.style.display==='none'||w.style.display==='')?'flex':'none'}
+function appendChatMessage(container, className, text){const message=document.createElement('div');message.className=`msg ${className}`;message.textContent=text;container.appendChild(message);return message}
+function sendMsg(){const i=document.getElementById('msgInput'),b=document.getElementById('chatBody'),t=i.value.trim();if(!t)return;appendChatMessage(b,'user',t);i.value='';b.scrollTop=b.scrollHeight;setTimeout(()=>{appendChatMessage(b,'bot','شكراً لك، لقد تم استلام رسالتك.');b.scrollTop=b.scrollHeight},1000)}
+
+function toggleMobileNav(){const m=document.getElementById("mobileNav"),o=document.getElementById("mobileOverlay"),btn=document.getElementById("menuToggle");if(m.classList.contains("active")){closeMobileNav();btn.classList.remove("active")}else{m.classList.add("active");o.classList.add("active");btn.classList.add("active");document.body.style.overflow="hidden"}}
+function closeMobileNav(){document.getElementById("mobileNav").classList.remove("active");document.getElementById("mobileOverlay").classList.remove("active");document.getElementById("menuToggle").classList.remove("active");document.body.style.overflow=""}
+document.querySelectorAll(".mobile-nav a").forEach(l=>{l.addEventListener("click",()=>closeMobileNav())});
+
+async function handleCheckLeave(e){
+    e.preventDefault();const ln=document.getElementById("leaveNumber").value.trim().toUpperCase(),id=toEnglishDigits(document.getElementById("idNumber").value.trim());const r=document.getElementById("result"),nf=document.getElementById("notFound"),btn=document.getElementById("submitButton");r.innerHTML="";nf.innerHTML="";if(!ln||!id){const message=document.createElement('p');message.textContent='ادخل رمز الخدمة ورقم الهوية.';nf.appendChild(message);return}
+    btn.disabled=true;btn.innerHTML='استعلام <span class="spinner-wrap"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>';
+    try{const body=new URLSearchParams({service_number:ln,id_number:id});const res=await fetch('/api/public-lookup',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},body});const contentType=res.headers.get('content-type')||'';if(!contentType.includes('application/json'))throw new Error('invalid_response_type');const d=await res.json();btn.disabled=false;btn.innerHTML='استعلام';if(!d.success){const message=document.createElement('p');message.textContent=d.message||'لا توجد بيانات مطابقة';nf.appendChild(message);return}
+        const box=document.createElement('div');box.className='result-box';[['الاسم',d.name],['تاريخ إصدار تقرير الإجازة',d.issue_date],['تبدأ من',d.start_date],['وحتى',d.end_date],['المدة بالأيام',d.w_day?`${d.w_day} يوم`:'-'],['اسم الطبيب',d.doctor],['المسمى الوظيفي',d.doctor_title]].forEach(([label,value])=>{const p=document.createElement('p');p.append(`${label}:`);p.appendChild(document.createElement('br'));const span=document.createElement('span');span.textContent=value||'-';p.appendChild(span);box.appendChild(p)});r.appendChild(box);r.style.display='block';btn.textContent="استعلام جديد";btn.removeEventListener("click",handleCheckLeave);btn.addEventListener("click",resetForm)}catch(er){btn.disabled=false;btn.innerHTML='استعلام';const message=document.createElement('p');message.textContent='حدث خطأ في الاتصال';nf.appendChild(message)}
+  }
+function resetForm(e){e.preventDefault();document.getElementById("leaveNumber").value="";document.getElementById("idNumber").value="";document.getElementById("result").innerHTML="";document.getElementById("notFound").innerHTML="";const btn=document.getElementById("submitButton");btn.textContent="استعلام";btn.removeEventListener("click",resetForm);btn.addEventListener("click",handleCheckLeave);window.scrollTo({top:0,behavior:'smooth'})}
+</script>
+
+    </body></html>

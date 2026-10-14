@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير الإجازة المرضية - {{ service_number }}</title>
+    <!-- html2pdf Library (محلية - لا تحتاج انترنت) -->
+    <script src="{{ url_for('static', filename='js/html2pdf.bundle.min.js') }}" defer></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f0f0f0; font-family: Arial, sans-serif; }
+        .toolbar {
+            background: #2b5ea7; padding: 12px 20px; color: white; text-align: center;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .toolbar button {
+            background: #16a34a; color: white; border: none; padding: 8px 18px;
+            border-radius: 6px; font-size: 14px; cursor: pointer; margin: 0 5px;
+            font-family: inherit; font-weight: bold;
+        }
+        .toolbar button:hover { background: #15803d; }
+        .toolbar button.secondary { background: #64748b; }
+        .toolbar p { margin: 0; font-size: 13px; }
+        .pdf-wrapper { display: flex; justify-content: center; padding: 20px 0; }
+
+        /* === A4 صفحة واحدة === */
+        #pdf-content {
+            width: 595px;  /* A4 عرض = 595px @ 72dpi */
+            padding: 0;
+            background: white;
+            font-family: Arial, sans-serif;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            /* إزالة direction: ltr — نضعه على الجدول مباشرة */
+        }
+
+        /* === Header === */
+        .pdf-header {
+            text-align: center;
+            padding-top: 34px;  /* 0.472in × 72 = 34px */
+            padding-left: 29px;  /* 0.404in × 72 = 29px */
+            padding-right: 29px;
+        }
+        .pdf-header img {
+            width: 525px;  /* 7.294in × 72 = 525px */
+            height: 136px;  /* 1.890in × 72 = 136px */
+        }
+
+        /* === Table === */
+        .pdf-table {
+            width: 525px;  /* 7.294in × 72 */
+            margin: 0 auto;
+            margin-top: 8px;
+            border-collapse: collapse;
+            text-align: center;
+            font-family: Cambria, Georgia, serif;
+            direction: ltr;  /* LTR على الجدول مباشرة */
+        }
+        .pdf-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px 6px;  /* زيادة من 3px إلى 8px عمودي */
+            vertical-align: middle;
+        }
+        /* الأعمدة */
+        .col-label-en { width: 79px; }   /* 1.1in × 72 */
+        .col-val-en { width: 144px; }    /* 2.0in × 72 */
+        .col-val-ar { width: 180px; }    /* 2.5in × 72 */
+        .col-label-ar { width: 108px; }  /* 1.5in × 72 */
+
+        /* الأنماط */
+        .en-label {
+            font-family: Cambria, Georgia, serif;
+            font-weight: bold;
+            font-size: 10.9pt;
+            color: #2F6CB5;
+            text-align: center;
+        }
+        .en-value {
+            font-family: Cambria, Georgia, serif;
+            font-size: 9.5pt;
+            color: #2C3D77;
+            text-align: center;
+        }
+        .ar-label {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 11.5pt;
+            color: #2F6CB5;
+            text-align: center;
+            direction: rtl;
+        }
+        .ar-value {
+            font-family: Arial, sans-serif;
+            font-size: 10.0pt;
+            color: #365F91;
+            text-align: center;
+            direction: rtl;
+        }
+        /* صف Leave Duration (خلفية زرقاء داكنة) */
+        .row-duration { background-color: #1a2a5e; }
+        .row-duration .en-label { color: #FFFFFF; font-size: 10.9pt; }
+        .row-duration .en-value { color: #FFFFFF; font-size: 9.2pt; }
+        .row-duration .ar-label { color: #FFFFFF; font-size: 11.4pt; }
+        .row-duration .ar-value { color: #FFFFFF; font-size: 8.8pt; }
+        /* صفوف متناوبة */
+        .row-alt { background-color: #F8F8F8; }
+
+        /* === Footer === */
+        .pdf-footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 29px 0 29px;
+            margin-top: 20px;
+            direction: ltr;  /* LTR على التذييل مباشرة */
+        }
+        .footer-left { width: 270px; text-align: center; }
+        .footer-right { width: 270px; text-align: center; }
+
+        /* QR code */
+        .qr-container {
+            margin: 0 auto 6px auto;
+            width: 75px;  /* تكبير من 54px إلى 75px */
+            height: 75px;  /* تكبير من 53px إلى 75px */
+        }
+        .qr-container img {
+            width: 75px !important;  /* تكبير */
+            height: 75px !important;
+        }
+
+        /* Verification text */
+        .verify-ar {
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            font-size: 10.0pt;
+            color: #000000;
+            text-align: center;
+            direction: rtl;
+            line-height: 1.3;
+        }
+        .verify-en {
+            font-family: Cambria, Georgia, serif;
+            font-weight: bold;
+            font-size: 7.7pt;
+            color: #000000;
+            text-align: center;
+            margin-top: 3px;
+        }
+        .verify-url {
+            font-family: Cambria, Georgia, serif;
+            font-size: 8.5pt;
+            color: #0000CC;
+            text-align: center;
+            text-decoration: underline;
+            margin-top: 2px;
+        }
+        .timestamp {
+            text-align: left;
+            margin-top: 35px;  /* زيادة من 10px إلى 35px */
+            font-family: Cambria, Georgia, serif;
+            font-weight: bold;
+            font-size: 8.2pt;
+            color: #212121;
+            padding-left: 10px;
+        }
+        .timestamp p { margin: 0 0 4px 0; }
+
+        /* MoH logo */
+        .moh-container {
+            margin: 0 auto 4px auto;
+        }
+        .moh-container img {
+            width: 69px;   /* 0.954in × 72 */
+            height: 62px;  /* 0.860in × 72 */
+        }
+
+        /* Hospital name */
+        .hospital-ar {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 11.0pt;
+            color: #000000;
+            text-align: center;
+            direction: rtl;
+            margin-top: 4px;
+        }
+        .hospital-en {
+            font-family: Cambria, Georgia, serif;
+            font-weight: bold;
+            font-size: 9.6pt;
+            color: #212121;
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        /* NHIC logo */
+        .nhic-container {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+            padding-right: 10px;
+        }
+        .nhic-container img {
+            width: 97px;   /* 1.349in × 72 */
+            height: 47px;  /* 0.656in × 72 */
+        }
+    </style>
+</head>
+<body>
+
+<div class="toolbar">
+    <p><strong id="status-text">⏳ جاري تحميل المكتبة وتوليد PDF...</strong></p>
+    <div style="margin-top: 8px;">
+        <button onclick="downloadPDF(this)" id="pdf-btn" style="display:none;">📥 إعادة تنزيل PDF</button>
+        <button onclick="window.close()" class="secondary">✕ إغلاق</button>
+    </div>
+</div>
+
+<div class="pdf-wrapper">
+    <div id="pdf-content">
+
+        <!-- Header -->
+        <div class="pdf-header">
+            <img src="{{ url_for('static', filename='images/ref/header_logo_ref.png') }}" alt="Header">
+        </div>
+
+        <!-- Table -->
+        <table class="pdf-table">
+            <tbody>
+                <!-- Row 0: Leave ID -->
+                <tr>
+                    <td class="col-label-en"><span class="en-label">Leave ID</span></td>
+                    <td class="col-val-en" colspan="2"><span class="en-value">{{ service_number }}</span></td>
+                    <td class="col-label-ar"><span class="ar-label">رمز الإجازة</span></td>
+                </tr>
+                <!-- Row 1: Leave Duration (highlighted) -->
+                <tr class="row-duration">
+                    <td class="col-label-en"><span class="en-label">Leave Duration</span></td>
+                    <td class="col-val-en"><span class="en-value">{{ duration_en }}</span></td>
+                    <td class="col-val-ar"><span class="ar-value">{{ duration_ar }}</span></td>
+                    <td class="col-label-ar"><span class="ar-label">مدة الإجازة</span></td>
+                </tr>
+                <!-- Row 2: Admission Date -->
+                <tr>
+                    <td class="col-label-en"><span class="en-label">Admission Date</span></td>
+                    <td class="col-val-en"><span class="en-value">{{ start_date_gregorian }}</span></td>
+                    <td class="col-val-ar"><span class="ar-value">{{ start_date_hijri }}</span></td>
+                    <td class="col-label-ar"><span class="ar-label">تاريخ الدخول</span></td>
+                </tr>
+                <!-- Row 3: Discharge Date (alt) -->
+                <tr class="row-alt">
+                    <td class="col-label-en"><span class="en-label">Discharge Date</span></td>
+                    <td class="col-val-en"><span class="en-value">{{ end_date_gregorian }}</span></td>
+                    <td class="col-val-ar"><span class="ar-value">{{ end_date_hijri }}</span></td>
+                    <td class="col-label-ar"><span class="ar-label">تاريخ الخروج</span></td>
+                </tr>
+                <!-- Row 4: Issue Date -->
+                <tr>
+                    <td class="col-label-en"><span class="en-label">Issue Date</span></td>
+                    <td class="col-val-en" colspan="2"><span class="en-value">{{ issue_date_gregorian }}</span></td>
+                    <td class="col-label-ar"><span class="ar-label">تاريخ إصدار التقرير</span></td>
+                </tr>
+                <!-- Row 5: Name (alt) -->
+                <tr class="row-alt">
+                    <td class="col-label-en"><span class="en-label">Name</span></td>
+                    <td class="col-val-en"><span class="en-value">{{ name_en }}</span></td>
+                    <td class="col-val-ar"><span class="ar-value">{{ name }}</span></td>
+                    <td class="col-label-ar"><span class="ar-label">الاسم</span></td>
+                </tr>
+                <!-- Row 6: National ID -->
+                <tr>
+                    <td class="col-label-en"><span class="en-label">National ID / Iqama</span></td>
+                    <td class="col-val-en" colspan="2"><span class="en-value">{{ id_number }}</span></td>
+                    <td class="col-label-ar"><span class="ar-label">رقم الهوية / الإقامة</span></td>
+                </tr>
+                <!-- Row 7: Nationality (alt) -->
+                <tr class="row-alt">
+                    <td class="col-label-en"><span class="en-label">Nationality</span></td>
+                    <td class="col-val-en"><span class="en-value">Saudi Arabia</span></td>
+                    <td class="col-val-ar"><span class="ar-value">السعودية</span></td>
+                    <td class="col-label-ar"><span class="ar-label">الجنسية</span></td>
+                </tr>
+                <!-- Row 8: Employer -->
+                <tr>
+                    <td class="col-label-en"><span class="en-label">Employer</span></td>
+                    <td class="col-val-en"></td>
+                    <td class="col-val-ar"><span class="ar-value">{{ employer_ar }}</span></td>
+                    <td class="col-label-ar"><span class="ar-label">جهة العمل</span></td>
+                </tr>
+                <!-- Row 9: Physician Name (alt) -->
+                <tr class="row-alt">
+                    <td class="col-label-en"><span class="en-label">Practitioner Name</span></td>
+                    <td class="col-val-en"><span class="en-value">{{ physician_name_en }}</span></td>
+                    <td class="col-val-ar"><span class="ar-value">{{ physician_name_ar }}</span></td>
+                    <td class="col-label-ar"><span class="ar-label">اسم الممارس</span></td>
+                </tr>
+                <!-- Row 10: Position -->
+                <tr>
+                    <td class="col-label-en"><span class="en-label">Position</span></td>
+                    <td class="col-val-en"><span class="en-value">{{ position_en }}</span></td>
+                    <td class="col-val-ar"><span class="ar-value">{{ position_ar }}</span></td>
+                    <td class="col-label-ar"><span class="ar-label">المسمى الوظيفي</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Footer -->
+        <div class="pdf-footer">
+            <!-- Left: QR + verification text + timestamp -->
+            <div class="footer-left">
+                <div class="qr-container">
+                    <img src="{{ url_for('static', filename='images/ref/qr_code_ref.png') }}" alt="QR">
+                </div>
+                <p class="verify-ar">للتحقق من بيانات التقرير يرجى التأكد من زيارة موقع منصة صحة الرسمي</p>
+                <p class="verify-en">To check the report please visit Seha's official website</p>
+                <a href="{{ site_url }}" class="verify-url" target="_blank">www.seha.sa/#/inquiries/slenquiry</a>
+                <div class="timestamp">
+                    <p>{{ time }}</p>
+                    <p>{{ issue_date_en }}</p>
+                </div>
+            </div>
+
+            <!-- Right: MoH logo + hospital name + NHIC logo -->
+            <div class="footer-right">
+                <div class="moh-container">
+                    <img src="{{ url_for('static', filename='images/ref/moh_logo_ref.png') }}" alt="MOH">
+                </div>
+                <p class="hospital-ar">مستشفى الجدعاني</p>
+                <p class="hospital-en">Al-Jadaani Hospital</p>
+                <div class="nhic-container">
+                    <img src="{{ url_for('static', filename='images/ref/nhic_logo_ref.png') }}" alt="NHIC">
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function waitForImages(element) {
+    const images = element.querySelectorAll('img');
+    const promises = [];
+    images.forEach(img => {
+        if (!img.complete && img.src) {
+            promises.push(new Promise(resolve => {
+                img.onload = resolve;
+                img.onerror = resolve;
+                setTimeout(resolve, 5000);
+            }));
+        }
+    });
+    return Promise.all(promises);
+}
+
+async function downloadPDF(btn) {
+    // التحقق من تحميل مكتبة html2pdf
+    if (typeof html2pdf === 'undefined') {
+        btn.innerHTML = '⏳ جاري تحميل المكتبة...';
+        btn.disabled = true;
+        // انتظار تحميل المكتبة
+        let attempts = 0;
+        while (typeof html2pdf === 'undefined' && attempts < 30) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            attempts++;
+        }
+        if (typeof html2pdf === 'undefined') {
+            alert('لم تُحمّل مكتبة PDF بعد.\nالرجاء الانتظار ثم المحاولة مرة أخرى.');
+            btn.innerHTML = '📥 تنزيل PDF';
+            btn.disabled = false;
+            return;
+        }
+        btn.innerHTML = '📥 تنزيل PDF';
+        btn.disabled = false;
+    }
+
+    const element = document.getElementById('pdf-content');
+    const filename = 'sickleave.pdf';
+
+    const opt = {
+        margin: 0,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 800,
+            windowHeight: 1200
+        },
+        jsPDF: {
+            unit: 'pt',
+            format: 'a4',
+            orientation: 'portrait',
+            compress: true
+        },
+        pagebreak: { mode: ['avoid-all'] }
+    };
+
+    const originalText = '📥 تنزيل PDF';
+    btn.innerHTML = '⏳ جاري التوليد...';
+    btn.disabled = true;
+
+    try {
+        await waitForImages(element);
+
+        // استخدام output('blob') ثم تنزيل يدوي
+        const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+
+        // إنشاء رابط تنزيل
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        btn.innerHTML = '✅ تم التنزيل!';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 2000);
+    } catch (err) {
+        console.error('PDF error:', err);
+        alert('حدث خطأ:\n' + err.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// تعطيل الزر حتى تُحمّل المكتبة + تنزيل تلقائي
+window.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('pdf-btn');
+    const statusText = document.getElementById('status-text');
+
+    // انتظار تحميل مكتبة html2pdf
+    const checkLib = setInterval(() => {
+        if (typeof html2pdf !== 'undefined') {
+            clearInterval(checkLib);
+            // تنزيل تلقائي فور تحميل المكتبة
+            setTimeout(() => {
+                autoDownload();
+            }, 500);
+        }
+    }, 300);
+});
+
+// تنزيل تلقائي عند فتح الصفحة
+async function autoDownload() {
+    const statusText = document.getElementById('status-text');
+    const btn = document.getElementById('pdf-btn');
+    const element = document.getElementById('pdf-content');
+    const filename = 'sickleave.pdf';
+
+    const opt = {
+        margin: 0,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 800,
+            windowHeight: 1200
+        },
+        jsPDF: {
+            unit: 'pt',
+            format: 'a4',
+            orientation: 'portrait',
+            compress: true
+        },
+        pagebreak: { mode: ['avoid-all'] }
+    };
+
+    try {
+        // انتظار الصور
+        await waitForImages(element);
+
+        // توليد PDF
+        const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+
+        // تنزيل
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        // عرض رسالة النجاح
+        statusText.innerHTML = '✅ تم تنزيل PDF بنجاح! يمكنك إغلاق هذه الصفحة.';
+        statusText.style.color = '#16a34a';
+        btn.style.display = 'inline-block';
+        btn.innerHTML = '📥 تنزيل مرة أخرى';
+    } catch (err) {
+        console.error('PDF error:', err);
+        statusText.innerHTML = '❌ فشل التنزيل التلقائي. اضغط الزر أدناه للمحاولة يدوياً.';
+        statusText.style.color = '#dc2626';
+        btn.style.display = 'inline-block';
+        btn.innerHTML = '📥 تنزيل PDF';
+        btn.disabled = false;
+    }
+}
+</script>
+
+</body>
+</html>
