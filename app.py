@@ -580,8 +580,8 @@ def admin_dashboard():
     records = load_records(force_reload=True)
 
     total = len(records)
-    unique_patients = len(set(r["id_number"] for r in records))
-    unique_doctors = len(set(r["doctor"] for r in records))
+    unique_patients = len(set(r.get("id_number", "") for r in records))
+    unique_doctors = len(set(r.get("doctor") or r.get("physician_name_ar", "") for r in records))
     total_days = sum(int(r.get("w_day", 0)) for r in records)
 
     stats = {
